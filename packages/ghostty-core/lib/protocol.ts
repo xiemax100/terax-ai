@@ -1,4 +1,4 @@
-export { CellFlags, Key, KeyAction, Mods } from "./types";
+export { CellFlags, Key, KeyAction, KittyKeyFlags, Mods } from "./types";
 export type {
   GhosttyTerminalConfig,
   GhosttyTerminalEvent,
