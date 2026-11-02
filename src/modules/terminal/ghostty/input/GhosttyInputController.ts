@@ -3,6 +3,7 @@ import { readTerminalClipboard } from "@/modules/terminal/lib/terminalClipboard"
 import {
   Key,
   KeyAction,
+  KittyKeyFlags,
   Mods,
   type KeyEvent,
 } from "@terax/ghostty-core/protocol";
@@ -327,7 +328,11 @@ export class GhosttyInputController {
       key,
       mods: modifiers(event),
       utf8: event.key.length === 1 ? event.key : undefined,
-      unshiftedCodepoint: unshiftedCodepoint(event),
+      unshiftedCodepoint: unshiftedCodepoint(
+        event,
+        (this.options.model.kittyKeyboardFlags?.() ?? 0) &
+          KittyKeyFlags.REPORT_ALL,
+      ),
     };
     const encoded = this.options.model.encodeKey(data);
     if (encoded.byteLength > 0) this.pressedKeys.set(event.code, data);
@@ -608,7 +613,17 @@ const UNSHIFTED_SYMBOLS: Readonly<Record<string, string>> = {
   Slash: "/?",
 };
 
-function unshiftedCodepoint(event: KeyboardEvent): number {
+function unshiftedCodepoint(event: KeyboardEvent, reportAll: number): number {
+  // Kitty protocol: the unicode-key-code must be the un-shifted key only when
+  // the event is reported as an escape code. Without "report all keys" (0x8),
+  // Shift-only text keys stay legacy text, so passing a base would make the
+  // encoder emit CSI <base>;<mods>u (e.g. Shift+; as `CSI 59;2u`), which the
+  // client decodes as the unshifted character. Ctrl/Alt/Meta combinations must
+  // always escape-code, so they keep the base, as does any key when the
+  // application turned on report-all-keys (see crynta/terax-ai#1381).
+  if (!event.ctrlKey && !event.altKey && !event.metaKey && !reportAll) {
+    return 0;
+  }
   const character = event.key.toLowerCase().codePointAt(0) ?? 0;
   if (event.key.length === 1 && character >= 32 && character !== 127) {
     if (event.shiftKey) {

@@ -174,6 +174,8 @@ export interface GhosttyTerminalModelApi extends TerminalModel {
   setSelection?(selection: TerminalBufferSelection | null): void;
   trackedSelection?(): TerminalBufferSelection | null;
   encodeKey(event: KeyEvent): Uint8Array;
+  /** Kitty keyboard protocol flags the encoder currently honors, if known. */
+  kittyKeyboardFlags?(): number;
   mode(mode: number, isAnsi?: boolean): boolean;
   setReplySink(sink: ((bytes: Uint8Array) => void) | null): void;
   enableSemanticMarkers?(enabled: boolean): void;
